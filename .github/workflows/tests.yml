@@ -4,100 +4,90 @@ on:
     workflow_dispatch:
     pull_request:
     push:
-        branches:
-            - master
-            - next
-            - next-major
-            - beta
-            - alpha
+        branches: [master, next, next-major, beta, alpha]
 
 jobs:
     phpunit:
-        name: PHPUnit on PHP v${{ matrix.php }} & TestBench ${{ matrix.test-bench }}
+        runs-on: [self-hosted, Linux, X64, docker]
         strategy:
-            fail-fast: true
+            fail-fast: false
             matrix:
-                php: [8.2, 8.3]
-                test-bench: [^8.0, ^9.0, ^10.0]
-
-        runs-on: packages
+                php: ['8.4', '8.5']
         container: chialab/php:${{ matrix.php }}
         steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
-
-            - name: Composer cache
-              uses: actions/cache@v4
-              with:
-                  path: vendor
-                  key: composer-${{ hashFiles('composer.json') }}
-
-            - name: Install dependencies
+            - uses: actions/checkout@v4
+            - name: Install and audit dependencies
               run: |
-                  composer require "orchestra/testbench=${{ matrix.test-bench }}" --dev --no-update
-                  composer install --prefer-dist --no-progress
-
+                  composer self-update 2.11.1 --no-interaction
+                  composer --version
+                  composer validate --strict
+                  composer install --prefer-dist --no-progress --no-interaction
+                  mkdir -p build
+                  composer audit --locked --format=json > build/composer-audit.json
+                  composer show --direct --format=json > build/composer-versions.json
             - name: Execute phpunit
-              run: composer test -- --colors=always
-
-    php-cs-fixer:
-        name: php-cs-fixer
-        runs-on: packages
-        container: chialab/php:8.3
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
-
-            - name: Composer cache
-              uses: actions/cache@v4
+              run: composer test -- --colors=always --log-junit build/junit.xml
+            - uses: actions/upload-artifact@v4
+              if: always()
               with:
-                  path: vendor
-                  key: composer-${{ hashFiles('composer.json') }}
-
-            - name: Install dependencies
-              run: composer install --prefer-dist --no-progress
-
-            - name: Execute php-cs-fixer
-              run: composer cs-fix -- --dry-run --diff --using-cache=no
-
-    prettier:
-        name: Prettier
-        runs-on: packages
-        container: node:22
-
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
-
-            - name: Run prettier
-              uses: actionsx/prettier@v3
-              with:
-                  args: --check .
+                  name: phpunit-${{ matrix.php || '8.4' }}
+                  path: build/
 
     phpstan:
-        name: PHPStan on PHP v${{ matrix.php }} & TestBench ${{ matrix.test-bench }}
+        runs-on: [self-hosted, Linux, X64, docker]
         strategy:
-            fail-fast: true
+            fail-fast: false
             matrix:
-                php: [8.2, 8.3]
-                test-bench: [^8.0, ^9.0, ^10.0]
-
-        runs-on: packages
+                php: ['8.4', '8.5']
         container: chialab/php:${{ matrix.php }}
         steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
-
-            - name: Composer cache
-              uses: actions/cache@v4
-              with:
-                  path: vendor
-                  key: composer-${{ hashFiles('composer.json') }}
-
-            - name: Install dependencies
+            - uses: actions/checkout@v4
+            - name: Install and audit dependencies
               run: |
-                  composer require "orchestra/testbench=${{ matrix.test-bench }}" --dev --no-update
-                  composer install --prefer-dist --no-progress
-
+                  composer self-update 2.11.1 --no-interaction
+                  composer --version
+                  composer validate --strict
+                  composer install --prefer-dist --no-progress --no-interaction
+                  mkdir -p build
+                  composer audit --locked --format=json > build/composer-audit.json
+                  composer show --direct --format=json > build/composer-versions.json
             - name: Execute phpstan
               run: composer phpstan
+            - uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                  name: phpstan-${{ matrix.php || '8.4' }}
+                  path: build/
+
+    php-cs-fixer:
+        runs-on: [self-hosted, Linux, X64, docker]
+        container: chialab/php:8.4
+        steps:
+            - uses: actions/checkout@v4
+            - name: Install and audit dependencies
+              run: |
+                  composer self-update 2.11.1 --no-interaction
+                  composer --version
+                  composer validate --strict
+                  composer install --prefer-dist --no-progress --no-interaction
+                  mkdir -p build
+                  composer audit --locked --format=json > build/composer-audit.json
+                  composer show --direct --format=json > build/composer-versions.json
+            - name: Execute php-cs-fixer
+              run: composer cs-fix -- --dry-run --diff --using-cache=no
+            - uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                  name: php-cs-fixer-8.4
+                  path: build/
+
+    prettier:
+        runs-on: [self-hosted, Linux, X64, docker]
+        container: node:22-bookworm-slim
+        steps:
+            - uses: actions/checkout@v4
+            - name: Check formatting
+              run: |
+                  corepack enable
+                  corepack prepare pnpm@11.1.2 --activate
+                  pnpm dlx prettier@3.6.2 --check .

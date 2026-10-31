@@ -32,13 +32,10 @@ php artisan softdeletes:migrate
 
 Also you can change default column name `is_deleted` to any other by setting static property `IS_DELETED`of certain model
 
-Versions compatibility
+## Development compatibility
 
-```bash
-For Laravel 10 - laravel-boolean-softdeletes 5.*
-For Laravel 11 - laravel-boolean-softdeletes 6.*
-For Laravel 12 - laravel-boolean-softdeletes 7.*
-```
+The current test suite targets Laravel 13 with Testbench 11 on PHP 8.4 and 8.5.
+The public package requirements and API remain compatible with the versions declared in `composer.json`; older framework combinations are not part of the current CI matrix.
 
 ## Change log
 
@@ -54,8 +51,8 @@ If you discover any security related issues, please email kolodiy.ivan.i@gmail.c
 
 ## Credits
 
--   [Ivan Kolodiy][link-author]
--   [All Contributors][link-contributors]
+- [Ivan Kolodiy][link-author]
+- [All Contributors][link-contributors]
 
 ## License
 
