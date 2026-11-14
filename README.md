@@ -8,7 +8,16 @@ This package is designed for high-load applications and optimizes queries with s
 
 ## Install
 
-Via Composer
+This fork is maintained in [GitLab](https://glab.ixbt.site/packages/laravel-boolean-softdeletes) on branch `master`.
+To select it instead of the upstream package, configure this VCS repository in the consuming
+application (GitLab access is required); the Composer package name remains `tenantcloud/laravel-boolean-softdeletes`:
+
+```bash
+composer config repositories.laravel-boolean-softdeletes vcs https://glab.ixbt.site/packages/laravel-boolean-softdeletes.git
+composer require tenantcloud/laravel-boolean-softdeletes:dev-master
+```
+
+Via Composer (upstream)
 
 ```bash
 $ composer require tenantcloud/laravel-boolean-softdeletes
